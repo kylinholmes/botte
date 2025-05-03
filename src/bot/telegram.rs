@@ -21,13 +21,27 @@ impl TelegramBot {
         let dt = chrono::Local::now();
         self.boardcast(format!("Hello botte! {:?}", dt)).await;
         println!("[bot] botte run");
-        let stream = self.rx.clone();
         let b = self.bot.clone();
 
         spawn(async {
             Command::repl(b, answer).await;
         });
+        self.repeat().await;
+    }
 
+    pub async fn boardcast(&self, msg: String) {
+        let chat_ids = &CONFIG.allow_chat_id;
+        for chat_id in chat_ids {
+            self.send_msg(chat_id.clone(), &msg).await;
+        }
+    }
+
+    pub async fn send_msg(&self, chat_id: String, message: &str) {
+        self.bot.send_message(chat_id, message).await.unwrap();
+    }
+
+    async fn repeat(&self) {
+        let stream = self.rx.clone();
         loop {
             match stream.recv() {
                 Ok(msg) => {
@@ -40,17 +54,6 @@ impl TelegramBot {
                 }
             }
         }
-    }
-
-    async fn boardcast(&self, msg: String) {
-        let chat_ids = &CONFIG.allow_chat_id;
-        for chat_id in chat_ids {
-            self.send_msg(chat_id.clone(), &msg).await;
-        }
-    }
-
-    async fn send_msg(&self, chat_id: String, message: &str) {
-        self.bot.send_message(chat_id, message).await.unwrap();
     }
 }
 
