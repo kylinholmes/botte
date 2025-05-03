@@ -21,7 +21,6 @@ pub fn run_bots() {
                 .unwrap();
             rt.block_on(async {
                 let bot = telegram::TelegramBot::new(rx);
-                println!("[bot] botte start");
                 bot.run().await;
                 info!("[bot] botte runs");
             });

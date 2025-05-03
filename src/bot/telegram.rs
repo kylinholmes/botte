@@ -1,11 +1,8 @@
-use std::fmt;
-
-use log::{error, info};
-use teloxide::prelude::*;
 use crossbeam::channel::Receiver;
+use log::{error, info};
+use teloxide::{prelude::*, utils::command::BotCommands};
 
 use crate::config::CONFIG;
-
 
 #[derive(Debug)]
 pub struct TelegramBot {
@@ -16,16 +13,16 @@ pub struct TelegramBot {
 impl TelegramBot {
     pub fn new(rx: Receiver<String>) -> Self {
         let bot = Bot::from_env();
-        TelegramBot {
-            bot,
-            rx,
-        }
+        TelegramBot { bot, rx }
     }
 
     pub async fn run(&self) {
-        self.send_msg("768449054".into(), "Hello, botte!").await;
+        let dt = chrono::Local::now();
+        self.boardcast(format!("Hello botte: {:?}", dt)).await;
         println!("[bot] botte run");
         let stream = self.rx.clone();
+        Command::repl(self.bot.clone(), answer).await;
+
         loop {
             match stream.recv() {
                 Ok(msg) => {
@@ -50,4 +47,31 @@ impl TelegramBot {
     async fn send_msg(&self, chat_id: String, message: &str) {
         self.bot.send_message(chat_id, message).await.unwrap();
     }
+}
+
+#[derive(BotCommands, Clone)]
+#[command(
+    rename_rule = "lowercase",
+    description = "These commands are supported:"
+)]
+enum Command {
+    #[command(description = "display this text.")]
+    Help,
+    #[command(description = "display chat id.")]
+    ChatId,
+}
+
+async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
+    match cmd {
+        Command::Help => {
+            bot.send_message(msg.chat.id, Command::descriptions().to_string())
+                .await?
+        }
+        Command::ChatId => {
+            bot.send_message(msg.chat.id, format!("Your chat id is: {}", msg.chat.id))
+                .await?
+        }
+    };
+
+    Ok(())
 }
