@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use chrono::{DateTime, Local};
 use crossbeam::channel::Receiver;
 use log::{error, info};
@@ -86,8 +84,8 @@ enum Command {
     Help,
     #[command(description = "display current chat id.")]
     ChatId,
-    #[command(description = "runing time.")]
-    RunTime,
+    #[command(description = "Up time.")]
+    Uptime,
 }
 
 async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
@@ -100,9 +98,9 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
             bot.send_message(msg.chat.id, format!("Your chat id is: {}", msg.chat.id))
                 .await?
         }
-        Command::RunTime => {
+        Command::Uptime => {
             let during = Local::now() - STATUS.get().unwrap().start_at;
-            bot.send_message(msg.chat.id, format!("Running time: {:?}", during))
+            bot.send_message(msg.chat.id, format!("Up time: {:?}", during))
                 .await?
         }
     };
