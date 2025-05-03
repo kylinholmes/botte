@@ -1,6 +1,6 @@
 use chrono::{DateTime, Local};
 use crossbeam::channel::Receiver;
-use log::{error, info};
+use log::{error, info, warn};
 use once_cell::sync::OnceCell;
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tokio::spawn;
@@ -12,12 +12,16 @@ pub static STATUS: OnceCell<TGStatus> = OnceCell::new();
 #[derive(Debug)]
 pub struct TGStatus {
     pub start_at: DateTime<Local>,
+    pub admin_chat_id: Vec<String>,
 }
 
 impl TGStatus {
     pub fn new() -> Self {
         let start_at = Local::now();
-        TGStatus { start_at }
+        TGStatus {
+            start_at,
+            admin_chat_id: vec!["768449054".into()],
+        }
     }
 }
 
@@ -36,7 +40,7 @@ impl TelegramBot {
     pub async fn run(&self) {
         let dt = chrono::Local::now();
         self.boardcast(format!("Hello botte! {:?}", dt)).await;
-        STATUS.set(TGStatus { start_at: dt }).unwrap();
+        STATUS.set(TGStatus::new()).unwrap();
         println!("[bot] botte run");
         let b = self.bot.clone();
 
@@ -79,6 +83,8 @@ impl TelegramBot {
     rename_rule = "lowercase",
     description = "These commands are supported:"
 )]
+
+#[derive(Debug)]
 enum Command {
     #[command(description = "display this text.")]
     Help,
@@ -86,22 +92,30 @@ enum Command {
     ChatId,
     #[command(description = "Up time.")]
     Uptime,
+    #[command(description = "start the bot.")]
+    Start,
 }
 
 async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
     match cmd {
         Command::Help => {
             bot.send_message(msg.chat.id, Command::descriptions().to_string())
-                .await?
+                .await?;
         }
         Command::ChatId => {
             bot.send_message(msg.chat.id, format!("Your chat id is: {}", msg.chat.id))
-                .await?
+                .await?;
         }
         Command::Uptime => {
             let during = Local::now() - STATUS.get().unwrap().start_at;
             bot.send_message(msg.chat.id, format!("Up time: {:?}", during))
-                .await?
+                .await?;
+        }
+        Command::Start => {
+            
+        },
+        x => {
+            warn!("Unknown command: {:?}", x);
         }
     };
 
