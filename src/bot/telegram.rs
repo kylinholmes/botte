@@ -1,6 +1,7 @@
 use crossbeam::channel::Receiver;
 use log::{error, info};
 use teloxide::{prelude::*, utils::command::BotCommands};
+use tokio::spawn;
 
 use crate::config::CONFIG;
 
@@ -18,10 +19,14 @@ impl TelegramBot {
 
     pub async fn run(&self) {
         let dt = chrono::Local::now();
-        self.boardcast(format!("Hello botte: {:?}", dt)).await;
+        self.boardcast(format!("Hello botte! {:?}", dt)).await;
         println!("[bot] botte run");
         let stream = self.rx.clone();
-        Command::repl(self.bot.clone(), answer).await;
+        let b = self.bot.clone();
+
+        spawn(async {
+            Command::repl(b, answer).await;
+        });
 
         loop {
             match stream.recv() {
