@@ -1,9 +1,27 @@
+use std::cell::RefCell;
+
+use chrono::{DateTime, Local};
 use crossbeam::channel::Receiver;
 use log::{error, info};
+use once_cell::sync::OnceCell;
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tokio::spawn;
 
 use crate::config::CONFIG;
+
+pub static STATUS: OnceCell<TGStatus> = OnceCell::new();
+
+#[derive(Debug)]
+pub struct TGStatus {
+    pub start_at: DateTime<Local>,
+}
+
+impl TGStatus {
+    pub fn new() -> Self {
+        let start_at = Local::now();
+        TGStatus { start_at }
+    }
+}
 
 #[derive(Debug)]
 pub struct TelegramBot {
@@ -20,6 +38,7 @@ impl TelegramBot {
     pub async fn run(&self) {
         let dt = chrono::Local::now();
         self.boardcast(format!("Hello botte! {:?}", dt)).await;
+        STATUS.set(TGStatus { start_at: dt }).unwrap();
         println!("[bot] botte run");
         let b = self.bot.clone();
 
@@ -65,8 +84,10 @@ impl TelegramBot {
 enum Command {
     #[command(description = "display this text.")]
     Help,
-    #[command(description = "display chat id.")]
+    #[command(description = "display current chat id.")]
     ChatId,
+    #[command(description = "runing time.")]
+    RunTime,
 }
 
 async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
@@ -77,6 +98,11 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
         }
         Command::ChatId => {
             bot.send_message(msg.chat.id, format!("Your chat id is: {}", msg.chat.id))
+                .await?
+        }
+        Command::RunTime => {
+            let during = Local::now() - STATUS.get().unwrap().start_at;
+            bot.send_message(msg.chat.id, format!("Running time: {:?}", during))
                 .await?
         }
     };

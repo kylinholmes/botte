@@ -10,7 +10,7 @@ pub static EXTERNAL_RUNTIME: Lazy<Runtime> = Lazy::new(|| {
     tokio::runtime::Runtime::new().unwrap()
 });
 
-
+/// **Will block on current thread**
 pub fn run_serve() {
     EXTERNAL_RUNTIME.block_on(async {
         let _ = serve::startup(webhook::api()).await;
