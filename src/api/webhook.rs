@@ -1,9 +1,8 @@
 use axum::{
-    http::{HeaderMap, StatusCode},
-    Json, Router,
+    http::StatusCode, Router,
 };
 use log::info;
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::OnceCell;
 use utoipa::{
     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
     Modify, OpenApi,
@@ -13,7 +12,7 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
 use crate::bot::BOTS_TX;
 
-
+#[allow(dead_code)]
 static API_TOKEN: OnceCell<String> = OnceCell::new();
 
 

@@ -1,14 +1,18 @@
 use botte::bot::run_bots;
 use botte::config::CONFIG;
 use botte::api::run_serve;
+use log::info;
 
 use std::path::PathBuf;
+use std::process::exit;
 use clap::Parser;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::util::SubscriberInitExt;
 
 
 fn main() {
+    // enable_full_backtrace();
+    enable_panic_hook();
     let _guard = boot().unwrap();
 
     run_bots();
@@ -42,4 +46,32 @@ fn boot() -> anyhow::Result<WorkerGuard> {
         .init();
 
     Ok(guard)
+}
+
+pub fn enable_panic_hook() {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        let println_panic_msg = |msg: &str| {
+            println!("{}", msg);
+            info!("{}", msg);
+        };
+
+        if let Some(location) = panic_info.location() {
+            println_panic_msg(&format!(
+                "panic occurred location in file '{}' at line {}",
+                location.file(),
+                location.line()
+            ));
+        }
+        if let Some(payload) = panic_info.payload().downcast_ref::<&str>() {
+            println_panic_msg(&format!("panic occurred payload: {}", payload));
+        }
+        println_panic_msg(&format!("panic occurred: {:?}", panic_info));
+        default_hook(panic_info);
+        exit(-1);
+    }));
+}
+
+pub fn enable_full_backtrace() {
+	unsafe { std::env::set_var("RUST_BACKTRACE", "full"); }
 }
