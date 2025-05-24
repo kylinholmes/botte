@@ -4,6 +4,7 @@ use botte::config::CONFIG;
 use botte::api::run_serve;
 use botte::mail::run_mail;
 use botte::webhook::run_webhook;
+use botte::G_TOKIO_RUNTIME;
 use log::info;
 
 use std::path::PathBuf;
