@@ -51,7 +51,7 @@ impl TelegramBot {
     }
 
     pub async fn boardcast(&self, msg: String) {
-        let chat_ids = &CONFIG.allow_chat_id;
+        let chat_ids = &CONFIG.telegram.allow_chat_id;
         for chat_id in chat_ids {
             self.send_msg(chat_id.clone(), &msg).await;
         }
@@ -113,10 +113,8 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
                 .await?;
         }
         Command::Start => {
-            
-        },
-        x => {
-            warn!("Unknown command: {:?}", x);
+            bot.send_message(msg.chat.id, format!("这里是Botte, 你的 `chat id` 是: {}", msg.chat.id))
+                .await?;
         }
     };
 

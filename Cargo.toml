@@ -32,3 +32,9 @@ utoipa = { version = "5.3.1",features = ["axum_extras"] }
 utoipa-scalar = { version = "0.3.0", features = ["axum"] }
 utoipa-axum = "0.2.0"
 crossbeam = "0.8.4"
+async-imap = { version = "0.10.4", features = ["tokio"] }
+mailparse = "0.16.1"
+futures = "0.3.31"
+tokio-native-tls = "0.3.1"
+tokio-util = { version = "0.7.15", features = ["compat"] }
+reqwest = "0.12.15"

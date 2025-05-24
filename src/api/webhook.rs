@@ -10,7 +10,7 @@ use utoipa::{
 use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
-use crate::bot::BOTS_TX;
+use crate::{boardcast::BROADCAST_SENDER};
 
 #[allow(dead_code)]
 static API_TOKEN: OnceCell<String> = OnceCell::new();
@@ -54,14 +54,14 @@ impl Modify for SecurityAddon {
 fn alert() -> OpenApiRouter {
     OpenApiRouter::new().nest(
         "/alert",
-        OpenApiRouter::new().routes(routes!(trading_view)),
+        OpenApiRouter::new().routes(routes!(webhook)),
     )
 }
 
 
 #[utoipa::path(
     post,
-    path = "/tv",
+    path = "/webhook",
     tags = ["alert"],
     request_body(
         content = String, 
@@ -69,13 +69,13 @@ fn alert() -> OpenApiRouter {
         description = "alert msg"
     ),
     responses(
-        (status = 200, description = "trading view alert success")
+        (status = 200, description = "alert success")
     )
 )]
-async fn trading_view(body: String) -> StatusCode {
-    info!("[trading view] {}", body);
-    if let Some(tx) = BOTS_TX.get() {
-        if let Err(err) = tx.send(body) {
+async fn webhook(body: String) -> StatusCode {
+    info!("[webhook] {}", body);
+    if let Some(tx) = BROADCAST_SENDER.get() {
+        if let Err(err) = tx.send(body).await {
             info!("Failed to send message: {}", err);
             return StatusCode::INTERNAL_SERVER_ERROR;
         }

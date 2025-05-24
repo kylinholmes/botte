@@ -1,4 +1,20 @@
 listen="127.0.0.1:8000"
+
+[mail]
+imap_service = "imap.qq.com:993"
+email = "3827509650@qq.com"
+passwd = "123"
+filter_users = [
+    "botte"
+]
+
+
+[webhook]
+hook_urls = [
+    "https://oapi.dingtalk.com/robot/send?access_token=d06fcd009be8a80b561d69283b17675188fb3c717d4ede289d8152c02b4fd682"
+]
+
+[telegram]
 allow_chat_id = [
     "768449054",
     "8069409472"

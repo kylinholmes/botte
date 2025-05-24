@@ -1,6 +1,8 @@
+use botte::boardcast::init_channel;
 use botte::bot::run_bots;
 use botte::config::CONFIG;
 use botte::api::run_serve;
+use botte::mail::run_mail;
 use log::info;
 
 use std::path::PathBuf;
@@ -10,13 +12,24 @@ use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::util::SubscriberInitExt;
 
 
+fn enbale_server() {
+    run_mail();
+    run_serve();
+}
+
+fn enable_client() {
+    run_bots();
+}
+
 fn main() {
     // enable_full_backtrace();
     enable_panic_hook();
     let _guard = boot().unwrap();
 
-    run_bots();
-    run_serve();
+    init_channel();
+    enable_client();
+    enbale_server();
+
 }
 
 
