@@ -1,4 +1,3 @@
-
 use std::thread;
 
 use crossbeam::channel::{Receiver, Sender};
@@ -40,7 +39,34 @@ pub fn boardcast(urls: Vec<String>, rx: Receiver<String>) {
             let m = msg.clone();
             G_TOKIO_RUNTIME.spawn(async move {
                 let client = reqwest::Client::new();
-                client.post(u.clone()).body(m.clone()).send().await.unwrap();
+                let j_msg = serde_json::json!({
+                    "msgtype": "text",
+                    "text": serde_json::json!({
+                        "content": m,
+                    }),
+                    "at": serde_json::json!({
+                        "isAtAll": true,
+                    }),
+                });
+                
+                let resp = client
+                    .post(u.clone())
+                    .header("Content-Type", "application/json")
+                    .body(j_msg.to_string())
+                    .send()
+                    .await;
+                match resp {
+                    Ok(response) => {
+                        if response.status().is_success() {
+                            info!("[webhook] successfully sent to {}", u);
+                        } else {
+                            info!("[webhook] failed to send to {}: {}", u, response.status());
+                        }
+                    }
+                    Err(e) => {
+                        info!("[webhook] error sending to {}: {}", u, e);
+                    }
+                }
             });
         }
     }

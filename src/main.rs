@@ -3,6 +3,7 @@ use botte::bot::run_bots;
 use botte::config::CONFIG;
 use botte::api::run_serve;
 use botte::mail::run_mail;
+use botte::webhook::run_webhook;
 use log::info;
 
 use std::path::PathBuf;
@@ -19,6 +20,7 @@ fn enbale_server() {
 
 fn enable_client() {
     run_bots();
+    run_webhook();
 }
 
 fn main() {
@@ -26,10 +28,13 @@ fn main() {
     enable_panic_hook();
     let _guard = boot().unwrap();
 
-    init_channel();
+    init_channel().unwrap();
     enable_client();
     enbale_server();
 
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(60));
+    }
 }
 
 

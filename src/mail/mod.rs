@@ -1,10 +1,10 @@
-use async_imap::{Client, Session};
+use async_imap::Client;
 use futures::StreamExt;
 use log::info;
-use mailparse::{MailHeaderMap, parse_header, parse_mail};
+use mailparse::{MailHeaderMap, parse_mail};
 use tokio::net::TcpStream;
 use tokio_native_tls::{TlsConnector, native_tls};
-use tokio_util::compat::{Compat, TokioAsyncReadCompatExt};
+use tokio_util::compat::TokioAsyncReadCompatExt;
 
 use crate::{
     G_TOKIO_RUNTIME,
@@ -30,7 +30,7 @@ pub async fn mail_client(mail: config::Mail) -> anyhow::Result<()> {
     };
     let tcp_stream = TcpStream::connect((host.clone(), port)).await?;
     let tls_stream = tls.connect(&host, tcp_stream).await?;
-    info!("Connected to IMAP server: {}:{}", host, port);
+    info!("[mail] Connected to IMAP server: {}:{}", host, port);
 
     let client = Client::new(tls_stream.compat());
 
@@ -38,7 +38,7 @@ pub async fn mail_client(mail: config::Mail) -> anyhow::Result<()> {
         .login(&mail.email, &mail.passwd)
         .await
         .map_err(|e| e.0)?;
-    info!("Logged in to IMAP server as: {}", mail.email);
+    info!("[mail] Logged in to IMAP server as: {}", mail.email);
 
     loop {
         // 4. 检查新邮件
@@ -55,7 +55,7 @@ pub async fn mail_client(mail: config::Mail) -> anyhow::Result<()> {
                     let to = mail.headers.get_first_value("To").unwrap_or_default();
                     // 6. 处理邮件
                     info!(
-                        "New email received: Subject: {}, From: {}, To: {}",
+                        "[mail] New email received: Subject: {}, From: {}, To: {}",
                         subject, from, to
                     );
                     let content = mail.get_body().unwrap_or_default();

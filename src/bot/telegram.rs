@@ -1,11 +1,11 @@
 use chrono::{DateTime, Local};
 use crossbeam::channel::Receiver;
-use log::{error, info, warn};
+use log::{error, info};
 use once_cell::sync::OnceCell;
 use teloxide::{prelude::*, utils::command::BotCommands};
 use tokio::spawn;
 
-use crate::config::CONFIG;
+use crate::{boardcast::BROADCAST_SENDER, config::CONFIG};
 
 pub static STATUS: OnceCell<TGStatus> = OnceCell::new();
 
@@ -94,6 +94,10 @@ enum Command {
     Uptime,
     #[command(description = "start the bot.")]
     Start,
+    #[command(description = "mock recv alert msg, try to boardcast other rx")]
+    Mock,
+
+    Exit,
 }
 
 async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
@@ -115,6 +119,25 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
         Command::Start => {
             bot.send_message(msg.chat.id, format!("这里是Botte, 你的 `chat id` 是: {}", msg.chat.id))
                 .await?;
+        },
+        Command::Mock => {
+            // get args
+            let msg = msg.text().unwrap_or_else(|| "" ).to_string();
+            // rm /mock prefix
+            let msg = msg.trim_start_matches("/mock ").trim().to_string();
+            info!("[bot] mock recv alert msg: {:?}", msg);
+            BROADCAST_SENDER.get().unwrap().send(msg.to_string()).await.unwrap();
+        },
+        Command::Exit => {
+            if msg.chat.id.to_string() == STATUS.get().unwrap().admin_chat_id[0] {
+                info!("[bot] exit command received, shutting down...");
+                bot.send_message(msg.chat.id, "Shutting down...").await?;
+                std::process::exit(0);
+            } else {
+                bot.send_message(msg.chat.id, "You are not authorized to use this command.")
+                    .await?;
+                error!("Unauthorized exit command attempt from chat id: {}", msg.chat.id);
+            }
         }
     };
 
