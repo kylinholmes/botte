@@ -3,8 +3,7 @@ use botte::bot::{run_bots, BOTS_TX};
 use botte::config::CONFIG;
 use botte::api::run_serve;
 use botte::mail::run_mail;
-use botte::webhook::{run_webhook, HOOK_TX};
-use botte::G_TOKIO_RUNTIME;
+use botte::webhook::run_webhook;
 use log::info;
 
 use std::path::PathBuf;
