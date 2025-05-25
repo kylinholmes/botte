@@ -1,9 +1,9 @@
 use botte::boardcast::init_channel;
-use botte::bot::run_bots;
+use botte::bot::{run_bots, BOTS_TX};
 use botte::config::CONFIG;
 use botte::api::run_serve;
 use botte::mail::run_mail;
-use botte::webhook::run_webhook;
+use botte::webhook::{run_webhook, HOOK_TX};
 use botte::G_TOKIO_RUNTIME;
 use log::info;
 
@@ -84,6 +84,9 @@ pub fn enable_panic_hook() {
         }
         if let Some(payload) = panic_info.payload().downcast_ref::<&str>() {
             println_panic_msg(&format!("panic occurred payload: {}", payload));
+        }
+        if let Some (bots) = BOTS_TX.get() {
+            let _ = bots.send(format!("ERROR: {}", panic_info.to_string()));
         }
         println_panic_msg(&format!("panic occurred: {:?}", panic_info));
         default_hook(panic_info);
