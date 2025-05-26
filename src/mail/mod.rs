@@ -7,7 +7,7 @@ use tokio_native_tls::{TlsConnector, native_tls};
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 use crate::{
-    boardcast::BROADCAST_SENDER, config::{self, CONFIG}, G_TOKIO_RUNTIME
+    boardcast::BROADCAST_SENDER, bot::BOTS_TX, config::{self, CONFIG}, G_TOKIO_RUNTIME
 };
 
 pub fn run_mail() {
@@ -16,6 +16,7 @@ pub fn run_mail() {
             let ret = mail_client(mail).await;
             if let Err(e) = ret {
                 error!("[mail] Error in mail client: {}", e);
+                BOTS_TX.get().unwrap().send(e.to_string()).unwrap();
             }
         });
     }
