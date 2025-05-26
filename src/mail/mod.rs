@@ -13,7 +13,10 @@ use crate::{
 pub fn run_mail() {
     if let Some(mail) = CONFIG.mail.clone() {
         G_TOKIO_RUNTIME.spawn(async {
-            mail_client(mail).await.unwrap();
+            let ret = mail_client(mail).await;
+            if let Err(e) = ret {
+                error!("[mail] Error in mail client: {}", e);
+            }
         });
     }
 }
