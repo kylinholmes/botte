@@ -1,3 +1,4 @@
+mod command;
 use std::thread;
 
 use log::info;
@@ -7,6 +8,8 @@ pub mod traits;
 use crossbeam::channel::{Sender, bounded};
 
 pub static BOTS_TX: OnceCell<Sender<String>> = OnceCell::new();
+pub static STATUS: OnceCell<telegram::TGStatus> = OnceCell::new();
+
 
 pub fn run_bots() {
     let (tx, rx) = bounded(64);

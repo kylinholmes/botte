@@ -14,7 +14,7 @@ pub static CONFIG: Lazy<BotteConfig> = Lazy::new(|| {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct BotteConfig {
-    pub listen: String,
+    pub listen: Option<String>,
     pub mail: Option<Mail>,
     pub webhook: Option<WebHook>,
     pub telegram: TelegramCfg,

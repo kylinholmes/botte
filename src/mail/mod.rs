@@ -12,11 +12,14 @@ use crate::{
 
 pub fn run_mail() {
     if let Some(mail) = CONFIG.mail.clone() {
-        G_TOKIO_RUNTIME.spawn(async {
-            let ret = mail_client(mail).await;
-            if let Err(e) = ret {
-                error!("[mail] Error in mail client: {}", e);
-                BOTS_TX.get().unwrap().send(e.to_string()).unwrap();
+        G_TOKIO_RUNTIME.spawn(async move {
+            let m = mail.clone();
+            loop {
+                let ret = mail_client(m.clone()).await;
+                if let Err(e) = ret {
+                    error!("[mail] Error in mail client: {}", e);
+                    BOTS_TX.get().unwrap().send(e.to_string()).unwrap();
+                }
             }
         });
     }
@@ -74,7 +77,12 @@ pub async fn mail_client(mail: config::Mail) -> anyhow::Result<()> {
                         info!("[mail] Sub: {} mark as seen", subject);
                         to_mark_as_read.push(seq.to_string());
                         if let Some(tx) = BROADCAST_SENDER.get() {
-                            let _ = tx.send(content).await;
+                            let ret = tx.send(content).await;
+                            if let Err(e) = ret {
+                                error!("[mail] Failed to send broadcast message: {}", e);
+                            } else {
+                                info!("[mail] Broadcast message sent successfully");
+                            }
                         } else {
                             error!("[mail] BROADCAST_SENDER not initialized");
                         }
