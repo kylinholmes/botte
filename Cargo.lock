@@ -407,6 +407,7 @@ dependencies = [
  "clap",
  "crossbeam",
  "futures",
+ "libc",
  "log",
  "mailparse",
  "num_cpus",

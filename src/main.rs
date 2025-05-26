@@ -12,6 +12,8 @@ use clap::Parser;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::util::SubscriberInitExt;
 
+extern crate libc;
+
 
 fn enbale_server() {
     run_mail();
@@ -27,6 +29,9 @@ fn main() {
     // enable_full_backtrace();
     enable_panic_hook();
     let _guard = boot().unwrap();
+
+    let res = unsafe { libc::nice(-20) };
+    println!("Set nice to: {}", res);
 
     init_channel().unwrap();
     enable_client();
