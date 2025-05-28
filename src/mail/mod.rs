@@ -1,6 +1,6 @@
 use async_imap::Client;
 use futures::StreamExt;
-use log::{info, warn};
+use log::{error, info, warn};
 use mailparse::{MailHeaderMap, parse_mail};
 use tokio::net::TcpStream;
 use tokio_native_tls::{TlsConnector, native_tls};
@@ -69,11 +69,10 @@ pub async fn mail_client(mail: config::Mail) -> anyhow::Result<()> {
                         subject, from, to
                     );
                     let content = extract_body(&mail);
-                    info!("[mail] Content: {}", content);
 
                     let from_address = from.split('<').last().and_then(|s| s.split('>').next()).unwrap_or_default().trim();
                     if filer_users.contains(&from_address.to_string()) {
-                        info!("[mail] Sub: {} mark as seen", subject);
+                        info!("[mail] Sub:[{}] marked as seen", subject);
                         to_mark_as_read.push(seq.to_string());
                         if let Some(tx) = BROADCAST_SENDER.get() {
                             let ret = tx.send(content).await;
