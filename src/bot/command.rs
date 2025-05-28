@@ -1,5 +1,5 @@
 use chrono::Local;
-use sysinfo::{Disks, Networks, System};
+use sysinfo::{Disks, Networks, Pid, System};
 use teloxide::{prelude::*, utils::command::BotCommands};
 use teloxide::utils::markdown::escape;
 use log::{error, info};
@@ -160,7 +160,7 @@ fn metric() -> String {
     let total_memory = system.total_memory() as f64 / 1_073_741_824.0; // 转换为GB
     let used_memory = system.used_memory() as f64 / 1_073_741_824.0; // 转换为GB
     let memory_usage = format!(
-        "Memory: {:.2} GB / {:.2} GB ({:.2}%)",
+        "[Memory]: {:.2} GB / {:.2} GB ({:.2}%)",
         used_memory,
         total_memory,
         (used_memory / total_memory) * 100.0
@@ -171,7 +171,7 @@ fn metric() -> String {
     let total_received: u64 = network.iter().map(|(_, data)| data.received()).sum();
     let total_transmitted: u64 = network.iter().map(|(_, data)| data.transmitted()).sum();
     let network_io = format!(
-        "Network: Received {:.2} MB, Transmitted {:.2} MB",
+        "[Network]: Received {:.2} MB, Transmitted {:.2} MB",
         total_received as f64 / 1_048_576.0,    // 转换为MB
         total_transmitted as f64 / 1_048_576.0  // 转换为MB
     );
@@ -179,27 +179,39 @@ fn metric() -> String {
     // 一个磁盘的使用情况
     let disk_info = if let Some(disk) = Disks::new_with_refreshed_list().get(0) {
         format!(
-            "Disk: {} {:.2} GB free, {:.2} GB total",
+            "[Disk]: {} {:.2} GB free, {:.2} GB total",
             disk.name().to_string_lossy(),
             disk.available_space() as f64 / 1_073_741_824.0, // 转换为GB
             disk.total_space() as f64 / 1_073_741_824.0      // 转换为GB
         )
     } else {
-        "Disk: No disk information available".to_string()
+        "[Disk]: No disk information available".to_string()
     };
 
     let tokio_met: tokio::runtime::RuntimeMetrics = G_TOKIO_RUNTIME.metrics();
     let tokio_info = format!(
-        "Tokio Runtime: {} tasks, {} alive, {} depth",
+        "[Tokio Runtime] {} tasks, {} alive, {} depth",
         tokio_met.num_workers(),
         tokio_met.num_alive_tasks(),
         tokio_met.global_queue_depth()
     );
 
+    // 获取程序自身占用内存
+    let program_name = std::env::current_exe()
+        .map(|path| path.file_name().unwrap_or_default().to_string_lossy().to_string())
+        .unwrap_or_else(|_| "botte".to_string());
+    let pid = std::process::id();
+    let process_memory = system.process(Pid::from_u32(pid)).map_or(0.0, |p| p.memory() as f64 / 1_073_741_824.0); // 转换为GB
+    let process_memory_usage = format!(
+        "{}[PID: {}] Memory Usage: {:.2} GB",
+        program_name, pid, process_memory
+    );
+
+
     // 拼接结果
     format!(
-        "CPU Usage: {:.2}%\n{}\n{}\n{}\n{}",
-        total_cpu_usage, memory_usage, network_io, disk_info, tokio_info
+        "[CPU Usage] {:.2}%\n{}\n{}\n{}\n{}\n{}",
+        total_cpu_usage, memory_usage, network_io, disk_info, tokio_info, process_memory_usage
     )
 }
 
