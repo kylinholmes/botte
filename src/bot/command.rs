@@ -125,7 +125,6 @@ pub async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> 
         }
         Command::Metrics => {
             let metric = metric();
-            info!("[bot] metrics: {}", metric);
             bot.send_message(msg.chat.id, metric)
                 .parse_mode(teloxide::types::ParseMode::Html)
                 .await?;

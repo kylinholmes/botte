@@ -1,6 +1,6 @@
 use async_imap::Client;
 use futures::StreamExt;
-use log::{error, info};
+use log::{info, warn};
 use mailparse::{MailHeaderMap, parse_mail};
 use tokio::net::TcpStream;
 use tokio_native_tls::{TlsConnector, native_tls};
@@ -12,13 +12,13 @@ use crate::{
 
 pub fn run_mail() {
     if let Some(mail) = CONFIG.mail.clone() {
+        info!("[mail] enable mail client");
         G_TOKIO_RUNTIME.spawn(async move {
             let m = mail.clone();
             loop {
                 let ret = mail_client(m.clone()).await;
                 if let Err(e) = ret {
-                    error!("[mail] Error in mail client: {}", e);
-                    BOTS_TX.get().unwrap().send(e.to_string()).unwrap();
+                    warn!("[mail] in mail client: {}", e);
                 }
             }
         });
@@ -26,7 +26,6 @@ pub fn run_mail() {
 }
 
 pub async fn mail_client(mail: config::Mail) -> anyhow::Result<()> {
-    info!("[mail] enable mail client");
     let filer_users = mail.filter_users.clone();
     let tls = TlsConnector::from(native_tls::TlsConnector::builder().build()?);
     let services = mail.imap_service.split(":").collect::<Vec<&str>>();
