@@ -4,6 +4,7 @@ use sysinfo::{Disks, Networks, Pid, System};
 use teloxide::utils::markdown::escape;
 use teloxide::{prelude::*, utils::command::BotCommands};
 
+// use crate::mail::EMAIL_HISTORY;
 use crate::G_TOKIO_RUNTIME;
 use crate::boardcast::BROADCAST_SENDER;
 use crate::bot::STATUS;
@@ -35,6 +36,8 @@ pub enum Command {
     Top,
     #[command(description = "查看进程信息")]
     Peek,
+    // #[command(description = "查看邮件")]
+    // Mails,
 }
 
 pub async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
@@ -132,15 +135,21 @@ pub async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> 
             bot.send_message(msg.chat.id, metric)
                 .parse_mode(teloxide::types::ParseMode::Html)
                 .await?;
-        },
+        }
         Command::Top => {
             let top = top();
+            info!("[bot] top command: {}", top);
             bot.send_message(msg.chat.id, top)
                 .parse_mode(teloxide::types::ParseMode::Html)
                 .await?;
         }
         Command::Peek => {
-            let arg1 = msg.text().unwrap_or_else(|| "").trim_start_matches("/peek ").trim().to_string();
+            let arg1 = msg
+                .text()
+                .unwrap_or_else(|| "")
+                .trim_start_matches("/peek ")
+                .trim()
+                .to_string();
             if arg1.is_empty() || arg1 == "/peek" {
                 let top = top();
                 bot.send_message(msg.chat.id, top)
@@ -149,10 +158,21 @@ pub async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> 
                 return Ok(());
             }
             let peek = peek(arg1);
+            info!("[bot] peek command: {}", peek);
             bot.send_message(msg.chat.id, peek)
                 .parse_mode(teloxide::types::ParseMode::Html)
                 .await?;
-        }
+        },
+        // Command::Mails => {
+        //     let history = EMAIL_HISTORY.lock().unwrap();
+        //     let mut response = String::from("<b>邮件历史记录：</b>\n\n");
+        //     for (_, mail) in history.iter() {
+        //         response.push_str(&format!("<b>From: {}\tTo: {}\tDate: {}\nSubject: {}</b>\n{}\n\n", mail.from, mail.to, mail.date, mail.subject, mail.content));
+        //     }
+        //     bot.send_message(msg.chat.id, "")
+        //     //     .parse_mode(teloxide::types::ParseMode::Html)
+        //         .await?;
+        // }
     };
 
     Ok(())
@@ -213,8 +233,8 @@ fn metric() -> String {
         let percent = used / total * 100.0;
         format!(
             "{:.2} GB / {:.2} GB ({:.2}%)",
-            used / 1_073_741_824.0, // 转换为GB
-            total as f64 / 1_073_741_824.0,      // 转换为GB
+            used / 1_073_741_824.0,         // 转换为GB
+            total as f64 / 1_073_741_824.0, // 转换为GB
             percent
         )
     } else {
@@ -243,17 +263,15 @@ fn metric() -> String {
     let pid = std::process::id();
     let process_memory = system
         .process(Pid::from_u32(pid))
-        .map_or(0.0, |p| p.memory() as f64 / 1_048_576.0
-    ); // 转换为MB
+        .map_or(0.0, |p| p.memory() as f64 / 1_048_576.0); // 转换为MB
 
-    let process_memory_usage = format!(
-        "{:.2} MB in-use",
-        process_memory
-    );
+    let process_memory_usage = format!("{:.2} MB in-use", process_memory);
     let kw = format!("{}@{}", pname, pid);
     metrics.push((&kw, process_memory_usage));
 
-    return metrics.iter().map(|(k, v)| format!("<b>{}</b>: {}", k, v))
+    return metrics
+        .iter()
+        .map(|(k, v)| format!("<b>{}</b>: {}", k, v))
         .collect::<Vec<String>>()
         .join("\n");
 }
@@ -273,13 +291,27 @@ fn top() -> String {
     let mut top = String::new();
     top.push_str("<b>Top 5 CPU:</b> \n");
     for (_pid, process) in processes.iter().take(5) {
-        top.push_str(&format!("{:#?}: {:.1}%\n", process.name(), process.cpu_usage()));
+        top.push_str(&format!(
+            "{}: {:.1}%\n",
+            process
+                .exe()
+                .map(|p| p.to_string_lossy())
+                .unwrap_or_default(),
+            process.cpu_usage()
+        ));
     }
 
     top.push_str("\n<b>Top 5 Mem:</b> \n");
     processes.sort_by(|(_, a), (_, b)| b.memory().partial_cmp(&a.memory()).unwrap());
     for (_pid, process) in processes.iter().take(5) {
-        top.push_str(&format!("{:#?}: {:.2} GB\n", process.name(), process.memory() as f64 / 1_048_576.0 / 1024.0));
+        top.push_str(&format!(
+            "{}: {:.2} GB\n",
+            process
+                .exe()
+                .map(|p| p.to_string_lossy())
+                .unwrap_or_default(),
+            process.memory() as f64 / 1_048_576.0 / 1024.0
+        ));
     }
 
     top
@@ -290,12 +322,17 @@ fn peek(pname: String) -> String {
     system.refresh_all();
     let processes: Vec<_> = system.processes().iter().collect();
     // 获取进程信息
-    let process = processes.iter().find(|(_, p)| p.name().to_string_lossy().contains(&pname));
+    let process = processes
+        .iter()
+        .find(|(_, p)| p.name().to_string_lossy().contains(&pname));
     let mut peek = String::new();
     if let Some((pid, process)) = process {
         peek.push_str(&format!("<b>{:#?}</b>: \n", process.name()));
         peek.push_str(&format!("CPU: {:.1}%\n", process.cpu_usage()));
-        peek.push_str(&format!("Mem: {:.2} GB\n", process.memory() as f64 / 1_048_576.0 / 1024.0));
+        peek.push_str(&format!(
+            "Mem: {:.2} GB\n",
+            process.memory() as f64 / 1_048_576.0 / 1024.0
+        ));
         peek.push_str(&format!("PID: {}\n", pid.as_u32()));
     } else {
         peek.push_str(&format!("Process {} not found\n", pname));
