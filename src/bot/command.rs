@@ -322,21 +322,21 @@ fn peek(pname: String) -> String {
     system.refresh_all();
     let processes: Vec<_> = system.processes().iter().collect();
     // 获取进程信息
-    let process = processes
+    let p =processes
         .iter()
-        .find(|(_, p)| p.name().to_string_lossy().contains(&pname));
-    let mut peek = String::new();
-    if let Some((pid, process)) = process {
-        peek.push_str(&format!("<b>{:#?}</b>: \n", process.name()));
-        peek.push_str(&format!("CPU: {:.1}%\n", process.cpu_usage()));
-        peek.push_str(&format!(
-            "Mem: {:.2} GB\n",
-            process.memory() as f64 / 1_048_576.0 / 1024.0
-        ));
-        peek.push_str(&format!("PID: {}\n", pid.as_u32()));
-    } else {
-        peek.push_str(&format!("Process {} not found\n", pname));
-    }
+        .filter(|(_, p)| p.name().to_string_lossy().contains(&pname));
 
+    let mut peek = String::new();
+    for (pid, process) in p.into_iter() {
+        if process.name().to_string_lossy().contains(&pname) {
+            peek.push_str(&format!("<b>{:#?}</b>: \n", process.name()));
+            peek.push_str(&format!("CPU: {:.1}%\n", process.cpu_usage()));
+            peek.push_str(&format!(
+                "Mem: {:.2} GB\n",
+                process.memory() as f64 / 1_048_576.0 / 1024.0
+            ));
+            peek.push_str(&format!("PID: {}\n\n", pid.as_u32()));
+        }
+    }
     peek
 }
