@@ -71,7 +71,7 @@ pub fn boardcast(urls: Vec<HookItem>, rx: Receiver<String>) {
                 let resp = client
                     .post(u.clone())
                     .header("Content-Type", "application/json")
-                    .json(&content)
+                    .body(content)
                     .send()
                     .await;
                 match resp {
