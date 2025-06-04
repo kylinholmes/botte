@@ -29,8 +29,29 @@ pub struct Mail {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub enum HookType {
+    #[serde(rename = "dingtalk")]
+    DingTalk,
+    #[serde(rename = "telegram")]
+    Telegram,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(untagged)]
+pub enum HookItem {
+    Simple(String),
+    Detailed {
+        url: String,
+        #[serde(default)]
+        keyword: String,
+        #[serde(rename = "type")]
+        hook_type: HookType,
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct WebHook {
-    pub hook_urls: Vec<String>,
+    pub hook_urls: Vec<HookItem>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

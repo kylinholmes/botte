@@ -329,9 +329,9 @@ fn peek(pname: String) -> String {
     let mut peek = String::new();
     for (pid, process) in p.into_iter() {
         if process.name().to_string_lossy().contains(&pname) {
-            peek.push_str(&format!("<b>{:#?}</b>: \n", process.name()));
+            peek.push_str(&format!("<b>{}</b>: \n", process.name().to_string_lossy()));
             peek.push_str(&format!("CMD: {:?}\n", process.cmd()));
-            peek.push_str(&format!("Exe: {:?}\n", process.exe().unwrap_or(std::path::Path::new("")).to_string_lossy()));
+            peek.push_str(&format!("Exe: {}\n", process.exe().unwrap_or(std::path::Path::new("")).to_string_lossy()));
             peek.push_str(&format!("CPU: {:.1}%\n", process.cpu_usage()));
             peek.push_str(&format!(
                 "Mem: {:.2} GB\n",
@@ -339,6 +339,9 @@ fn peek(pname: String) -> String {
             ));
             peek.push_str(&format!("PID: {}\n\n", pid.as_u32()));
         }
+    }
+    if peek.is_empty() {
+        peek.push_str(&format!("Process {} not found\n", pname));
     }
     peek
 }
