@@ -54,7 +54,9 @@ impl Modify for SecurityAddon {
 fn alert() -> OpenApiRouter {
     OpenApiRouter::new().nest(
         "/alert",
-        OpenApiRouter::new().routes(routes!(webhook)),
+        OpenApiRouter::new()
+            .routes(routes!(webhook))
+            .routes(routes!(strategy)),
     )
 }
 
@@ -81,5 +83,24 @@ async fn webhook(body: String) -> StatusCode {
         }
     }
 
+    StatusCode::OK
+}
+
+
+#[utoipa::path(
+    post,
+    path = "/strategy",
+    tags = ["alert"],
+    request_body(
+        content = String, 
+        content_type = "text/plain",
+        description = "strategy info msg"
+    ),
+    responses(
+        (status = 200, description = "strategy success")
+    )
+)]
+async fn strategy(body: String) -> StatusCode {
+    info!("[strategy] {}", body);
     StatusCode::OK
 }

@@ -51,6 +51,11 @@ fn fmt_dingtalk(kw: String, m: String) -> String {
 pub fn boardcast(urls: Vec<HookItem>, rx: Receiver<String>) {
     while let Ok(msg) = rx.recv() {
         info!("[webhook] received msg: {}", msg);
+        if let Ok(j) = serde_json::from_str::<serde_json::Value>(&msg) {
+            if j.get("ping").is_some() {
+                continue;
+            }
+        }
         for u in &urls {
             info!("[webhook] send to {:?}", u);
             let msg = msg.clone();
