@@ -68,6 +68,11 @@ impl TelegramBot {
                 Ok(msg) => {
                     // Handle the message
                     info!("Recv: {}", msg);
+                    if let Ok(j) = serde_json::from_str::<serde_json::Value>(&msg) {
+                        if j.get("ping").is_some() {
+                            continue;
+                        }
+                    }
                     self.boardcast(msg).await;
                 }
                 Err(_) => {
